@@ -8,7 +8,7 @@ import java.util.stream.Stream;
 import static com.matchdata.collector.stream.DataEventListener.DataReceived.dataReceivedEvent;
 
 public class FileMatchEventStream implements MatchEventStream {
-  private String fileName;
+  private final String fileName;
   private final DataEventListener dataEventListener;
 
   FileMatchEventStream(String fileName, DataEventListener dataEventListener) {

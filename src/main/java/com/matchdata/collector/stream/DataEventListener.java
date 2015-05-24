@@ -7,9 +7,10 @@ public interface DataEventListener {
 
   @AutoValue
   abstract static class DataReceived {
-    static DataReceived dataReceivedEvent(String rawData) {
+    public static DataReceived dataReceivedEvent(String rawData) {
       return new AutoValue_DataEventListener_DataReceived(rawData);
     }
-    abstract String data();
+
+    public abstract String data();
   }
 }
