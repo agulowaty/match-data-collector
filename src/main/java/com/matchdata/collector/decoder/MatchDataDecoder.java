@@ -19,25 +19,34 @@ public class MatchDataDecoder implements DataEventListener {
     matchState.push(parseToEvent(Integer.decode(data)));
   }
 
-  private MatchState.MatchStateEvent parseToEvent(int dataAsInt) {
+  private MatchState.MatchStateEvent parseToEvent(int data) {
     return matchStateEvent()
-              .pointsScored(BitPatternMask.POINTS_SCORED.applyTo(dataAsInt))
-              .team(BitPatternMask.TEAM.applyTo(dataAsInt))
-              .build();
+            .pointsScored(BitPatternMask.POINTS_SCORED.applyTo(data))
+            .team(BitPatternMask.TEAM.applyTo(data) + 1)
+            .totalFirstTeam(BitPatternMask.TOTAL_FIRST_TEAM.applyTo(data))
+            .totalSecondTeam(BitPatternMask.TOTAL_SECOND_TEAM.applyTo(data))
+            .elapsedSeconds(BitPatternMask.ELAPSED_SECONDS.applyTo(data))
+            .build();
   }
 
   private enum BitPatternMask {
-    POINTS_SCORED(0b11),
-    TEAM(0b100);
-    private final int mask;
+    POINTS_SCORED(0b11, 0),
+    TEAM(0b1_00, 2),
+    TOTAL_SECOND_TEAM(0b11111111_0_00, 3),
+    TOTAL_FIRST_TEAM(0b11111111_00000000_0_00, 11),
+    ELAPSED_SECONDS(0b111111111111_00000000_00000000_0_00, 19);
 
-    BitPatternMask(int mask) {
+    private final int mask;
+    private final int shift;
+
+    BitPatternMask(int mask, int shift) {
       this.mask = mask;
+      this.shift = shift;
     }
 
     public int applyTo(int num) {
-      return num & mask;
+      return (num & mask) >> shift;
     }
-  }
+    }
 
 }
