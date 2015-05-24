@@ -16,7 +16,7 @@ public class Bootstrap {
   }
 
   void run() {
-    MatchEventStreams.fromFile(decodeAndSave(matchState), classPathFile("sample1.txt")).process();
+    MatchEventStreams.fromFile(decodeAndSave(matchState), classPathFile("sample2.txt")).process();
   }
 
   private static String classPathFile(String fileName) {

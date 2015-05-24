@@ -2,12 +2,15 @@ package com.matchdata.collector.decoder;
 
 import com.matchdata.collector.MatchState;
 import com.matchdata.collector.stream.DataEventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.matchdata.collector.MatchState.MatchStateEvent.matchStateEvent;
 
 public class MatchDataDecoder implements DataEventListener {
 
   private final MatchState matchState;
+  private static final Logger logger = LoggerFactory.getLogger(MatchDataDecoder.class);
 
   MatchDataDecoder(MatchState matchState) {
     this.matchState = matchState;
@@ -47,6 +50,6 @@ public class MatchDataDecoder implements DataEventListener {
     public int applyTo(int num) {
       return (num & mask) >> shift;
     }
-    }
+  }
 
 }
