@@ -16,16 +16,19 @@ public class MatchDataDecoder implements DataEventListener {
   @Override
   public void onDataReceived(DataReceived event) {
     String data = event.data();
-    int dataAsInt = Integer.decode(data);
+    matchState.push(parseToEvent(Integer.decode(data)));
+  }
 
-    MatchState.MatchStateEvent matchStateEvent = matchStateEvent()
-            .pointsScored(BitPatternMask.POINTS_SCORED.applyTo(dataAsInt))
-            .build();
-    matchState.push(matchStateEvent);
+  private MatchState.MatchStateEvent parseToEvent(int dataAsInt) {
+    return matchStateEvent()
+              .pointsScored(BitPatternMask.POINTS_SCORED.applyTo(dataAsInt))
+              .team(BitPatternMask.TEAM.applyTo(dataAsInt))
+              .build();
   }
 
   private enum BitPatternMask {
-    POINTS_SCORED(0b11);
+    POINTS_SCORED(0b11),
+    TEAM(0b100);
     private final int mask;
 
     BitPatternMask(int mask) {

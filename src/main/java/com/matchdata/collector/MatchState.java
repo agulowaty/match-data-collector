@@ -10,7 +10,9 @@ public class MatchState {
 
   @AutoValue
   public abstract static class MatchStateEvent {
-    abstract int pointsScored();
+    public abstract int pointsScored();
+
+    public abstract int team();
 
     public static Builder matchStateEvent() {
       return new AutoValue_MatchState_MatchStateEvent.Builder();
@@ -20,6 +22,7 @@ public class MatchState {
     public abstract static class Builder {
       public abstract Builder pointsScored(int points);
       public abstract MatchStateEvent build();
+      public abstract Builder team(int team);
     }
   }
 
