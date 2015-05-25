@@ -4,44 +4,70 @@ import com.google.auto.value.AutoValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.Deque;
-import java.util.LinkedList;
-
-import static java.util.Collections.unmodifiableCollection;
-import static java.util.stream.Collectors.summingInt;
+import java.util.*;
+import java.util.function.Predicate;
 
 public class MatchState {
   private final static Logger logger = LoggerFactory.getLogger(MatchState.class);
-  private Deque<MatchStateEvent> events = new LinkedList<>();
+  private final LinkedList<MatchStateEvent> events;
 
-  public void push(MatchStateEvent matchStateEvent) {
-//    if (!events.isEmpty()) {
-//      checkElapsedTime(matchStateEvent);
-//      checkTotalCountConsistency(matchStateEvent);
-//    }
 
-    if (!events.contains(matchStateEvent)) {
-      events.addLast(matchStateEvent);
-      logger.info("Added new event: " + matchStateEvent.toString());
-    }
+  public MatchState() {
+    events = new LinkedList<>();
   }
 
-  private void checkTotalCountConsistency(MatchStateEvent matchStateEvent) {
-    Integer pointsScored = events.stream()
-            .filter(e -> e.team() == matchStateEvent.team())
-            .collect(summingInt(e -> e.pointsScored()));
-    if (pointsScored + matchStateEvent.pointsScored() != matchStateEvent.totalForTeam()) {
+  public void push(MatchStateEvent incomingEvent) {
+    if (isDuplicated(incomingEvent)) {
+      logger.warn("Duplicated event: " + incomingEvent);
+      return;
     }
+    addElement(incomingEvent);
   }
 
-  private void checkElapsedTime(MatchStateEvent matchStateEvent) {
-    if (events.peekLast().elapsedSeconds() > matchStateEvent.elapsedSeconds()) {
+  private void addElement(MatchStateEvent incomingEvent) {
+    if (!totalConsistent(incomingEvent)) {
+      logger.warn("Event inconsistent in totals dropped: " + incomingEvent);
+      return;
     }
+    if (outOfOrder(incomingEvent)) {
+      Optional<MatchStateEvent> eventToAddBefore = lastEventSuchThat(e -> e.elapsedSeconds() > incomingEvent.elapsedSeconds());
+      int addAt = eventToAddBefore.map(e -> events.lastIndexOf(e)).orElse(events.size());
+      events.add(addAt, incomingEvent);
+    } else {
+      events.addLast(incomingEvent);
+    }
+    logger.info("Added new event: " + incomingEvent.toString());
   }
 
-  public Collection<MatchStateEvent> allEvents() {
-    return unmodifiableCollection(events);
+  private boolean outOfOrder(MatchStateEvent incomingEvent) {
+    return !events.isEmpty() && events.getLast().elapsedSeconds() > incomingEvent.elapsedSeconds();
+  }
+
+  private boolean isDuplicated(MatchStateEvent incomingEvent) {
+    return !events.isEmpty() && events.getLast().equals(incomingEvent);
+  }
+
+  private boolean totalConsistent(MatchStateEvent incomingEvent) {
+    Optional<MatchStateEvent> found = lastEventSuchThat(e -> e.team() == incomingEvent.team());
+    return found
+            .map(e -> e.totalOfScoringTeam() + incomingEvent.pointsScored() == incomingEvent.totalOfScoringTeam())
+            .orElse(true);
+  }
+
+  private Optional<MatchStateEvent> lastEventSuchThat(Predicate<MatchStateEvent> predicate) {
+    Iterator<MatchStateEvent> it = events.iterator();
+    MatchStateEvent found = null;
+    while (it.hasNext()) {
+      MatchStateEvent event = it.next();
+      if (predicate.test(event)) {
+        found = event;
+      }
+    }
+    return Optional.ofNullable(found);
+  }
+
+  public List<MatchStateEvent> allEvents() {
+    return Collections.unmodifiableList(events);
   }
 
   @AutoValue
@@ -60,7 +86,7 @@ public class MatchState {
 
     public abstract int elapsedSeconds();
 
-    public int totalForTeam() {
+    public int totalOfScoringTeam() {
       return team() == 1 ? totalFirstTeam() : totalSecondTeam();
     }
 
