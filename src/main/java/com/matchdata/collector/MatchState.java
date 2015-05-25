@@ -11,7 +11,6 @@ public class MatchState {
   private final static Logger logger = LoggerFactory.getLogger(MatchState.class);
   private final LinkedList<MatchStateEvent> events;
 
-
   public MatchState() {
     events = new LinkedList<>();
   }
@@ -34,7 +33,7 @@ public class MatchState {
       int addAt = eventToAddBefore.map(e -> events.lastIndexOf(e)).orElse(events.size());
       events.add(addAt, incomingEvent);
     } else {
-      events.addLast(incomingEvent);
+      events.add(incomingEvent);
     }
     logger.info("Added new event: " + incomingEvent.toString());
   }
@@ -55,9 +54,9 @@ public class MatchState {
   }
 
   private Optional<MatchStateEvent> lastEventSuchThat(Predicate<MatchStateEvent> predicate) {
-    Iterator<MatchStateEvent> it = events.iterator();
+    Iterator<MatchStateEvent> it = events.descendingIterator();
     MatchStateEvent found = null;
-    while (it.hasNext()) {
+    while (it.hasNext() && found == null) {
       MatchStateEvent event = it.next();
       if (predicate.test(event)) {
         found = event;
@@ -68,6 +67,19 @@ public class MatchState {
 
   public List<MatchStateEvent> allEvents() {
     return Collections.unmodifiableList(events);
+  }
+
+  public Optional<MatchStateEvent> lastEvent() {
+    return events.isEmpty() ? Optional.empty() : Optional.of(events.getLast());
+  }
+
+  public List<MatchStateEvent> lastN(int n) {
+    ArrayList<MatchStateEvent> result = new ArrayList<>();
+    Iterator<MatchStateEvent> iterator = events.descendingIterator();
+    for (int i = 0; i < n && iterator.hasNext(); i++) {
+      result.add(iterator.next());
+    }
+    return result;
   }
 
   @AutoValue
